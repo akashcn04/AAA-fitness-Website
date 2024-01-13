@@ -1,0 +1,207 @@
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+  <style>
+    
+    .food-order {
+      width: 80%;
+      margin: 0 auto;
+      font-family: Arial, sans-serif;
+    }
+
+    
+    .food-items {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    
+    .food-item {
+      width: 30%;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .food-item img {
+      width: 100%;
+      height: auto;
+    }
+
+    .food-item label, .food-item input {
+      display: block;
+    }
+
+    .order-summary {
+        position: absolute;
+        top: 600px;
+      width: 40%;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .order-summary button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background-color: green;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+
+    const foodItems = [
+      {id: 1, name: "Pizza", price: 200, image: "pizza.jpg"},
+      {id: 2, name: "Burger", price: 100, image: "burger.jpg"},
+      {id: 3, name: "Sandwich", price: 50, image: "sandwich.jpg"}
+    ];
+
+ 
+    class FoodItem extends React.Component {
+      constructor(props) {
+        super(props);
+ 
+        this.state = {
+          quantity: 0
+        };
+ 
+        this.handleChange = this.handleChange.bind(this);
+        this.handleBlur = this.handleBlur.bind(this);
+      }
+
+      handleChange(event) {
+ 
+        const value = event.target.value;
+ 
+        this.setState({
+          quantity: value
+        });
+
+        this.props.onUpdate(this.props.id, value);
+      }
+
+      handleBlur(event) {
+ 
+        const value = event.target.value;
+ 
+        if (isNaN(value) || value < 0) {
+ 
+          event.target.value = 0;
+ 
+          this.setState({
+            quantity: 0
+          });
+
+          this.props.onUpdate(this.props.id, 0);
+        }
+      }
+
+      // Define a method to render the component
+      render() {
+        return (
+          <div className="food-item">
+            <img src={this.props.image} alt={this.props.name} />
+            <h3>{this.props.name}</h3>
+            <p>Price: {this.props.price}</p>
+            <label htmlFor={"quantity-" + this.props.id}>Quantity:</label>
+            <input type="number" id={"quantity-" + this.props.id} min="0" value={this.state.quantity} onChange={this.handleChange} onBlur={this.handleBlur} />
+          </div>
+        );
+      }
+    }
+
+    // Define a component to render the order summary
+    class OrderSummary extends React.Component {
+      constructor(props) {
+        super(props);
+        // Initialize the state with total cost as zero and order time as null
+        this.state = {
+          totalCost: 0,
+          orderTime: null,
+          deliveryTime: null
+        };
+      }
+
+ 
+      updateOrderSummary(id, quantity) {
+ 
+        const foodItem = this.props.foodItems.find(item => item.id === id);
+
+        const cost = foodItem.price * quantity;
+ 
+        this.setState(prevState => ({
+          totalCost: prevState.totalCost + cost - (prevState[id] || 0),
+          [id]: cost 
+        }));
+      }
+
+    
+      placeOrder() {
+      
+        const orderTime = new Date();
+       
+        const deliveryTime = new Date(orderTime.getTime() + 30 * 60 * 1000);
+        
+        this.setState({
+          orderTime: orderTime,
+          deliveryTime: deliveryTime
+        });
+      }
+
+     
+      render() {
+        return (
+          <div className="order-summary">
+            <h2>Order Summary</h2>
+            <p>Total Cost: {this.state.totalCost}</p>
+            {this.state.orderTime && <p>Order Time: {this.state.orderTime.toLocaleString()}</p>}
+            {this.state.deliveryTime && <p>Delivery Time: {this.state.deliveryTime.toLocaleString()}</p>}
+            <button onClick={() => this.placeOrder()}>Place Order</button>
+          </div>
+        );
+      }
+    }
+
+    class FoodOrder extends React.Component {
+      constructor(props) {
+        super(props);
+  
+        this.orderSummaryRef = React.createRef();
+      }
+
+      updateOrderSummary(id, quantity) {
+       
+        this.orderSummaryRef.current.updateOrderSummary(id, quantity);
+      }
+
+      render() {
+        return (
+          <div className="food-order">
+            <h1>Food Order</h1>
+            <div className="food-items">
+              {}
+              {this.props.foodItems.map(item => (
+                <FoodItem key={item.id} id={item.id} name={item.name} price={item.price} image={item.image} onUpdate={(id, quantity) => this.updateOrderSummary(id, quantity)} />
+              ))}
+            </div>
+            {}
+            <OrderSummary ref={this.orderSummaryRef} foodItems={this.props.foodItems} />
+          </div>
+        );
+      }
+    }
+
+   
+    ReactDOM.render(<FoodOrder foodItems={foodItems} />, document.getElementById("root"));
+  </script>
+</body>
+</html>
